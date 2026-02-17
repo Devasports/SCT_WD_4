@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart To-Do Pro | Hyper-Glow Edition</title>
+
+    <style>
+        :root {
+            --navy: #0f172a;
+            --blue: #3b82f6;
+            --accent: #22d3ee;
+            --glass: rgba(15, 23, 42, 0.85);
+            --text-main: #f8fafc;
+            --shimmer: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        }
+
+        * { box-sizing: border-box; font-family: "Inter", sans-serif; }
+
+        body {
+            margin: 0; min-height: 100vh;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            display: flex; justify-content: center; align-items: center;
+            color: var(--text-main); padding: 20px; overflow: hidden; position: relative;
+        }
+
+        /* ===== SPARKLING BACKGROUND ===== */
+        .sparkle-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .star { position: absolute; background: white; border-radius: 50%; opacity: 0; animation: twinkle var(--d) infinite; }
+        @keyframes twinkle {
+            0%, 100% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1); opacity: 0.6; box-shadow: 0 0 10px white; }
+        }
+
+        /* ===== BUBBLE & CLICK INTERACTION ===== */
+        .card, .btn-main, .done, .delete, .edit-btn {
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+            position: relative; overflow: hidden;
+        }
+        .card:active, .btn-main:active, .done:active, .delete:active, .edit-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* SHINE SELECTION EFFECT */
+        .card::after, .btn-main::after, .done::after, .delete::after {
+            content: ''; position: absolute; top: -50%; left: -150%;
+            width: 50%; height: 200%; background: rgba(255, 255, 255, 0.2);
+            transform: rotate(30deg); pointer-events: none;
+        }
+        .card.active-filter::after, .btn-main:hover::after {
+            left: 150%; transition: 0.6s;
+        }
+
+        /* ===== LAYOUT ===== */
+        .wrapper { display: flex; gap: 30px; max-width: 1050px; width: 100%; z-index: 10; }
+        
+        .dashboard { 
+            width: 280px; background: var(--glass); backdrop-filter: blur(20px);
+            padding: 25px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .todo-app { 
+            flex: 1; background: var(--glass); backdrop-filter: blur(25px);
+            padding: 40px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 20px;
+            margin-bottom: 12px; text-align: center; border: 1px solid transparent;
+        }
+        .card.active-filter { border-color: var(--accent); background: rgba(34, 211, 238, 0.1); }
+        .card b { font-size: 2.2rem; display: block; }
+        .card span { font-size: 0.7rem; color: #94a3b8; font-weight: bold; }
+
+        /* ===== INPUTS & DATE PICKER ===== */
+        .input-box { display: flex; flex-direction: column; gap: 12px; }
+        input {
+            background: rgba(2, 6, 23, 0.7); border: 1px solid rgba(255,255,255,0.1);
+            padding: 16px; border-radius: 12px; color: white; width: 100%; outline: none;
+        }
+        input:focus { border-color: var(--accent); }
+
+        .date-scroller {
+            position: relative; display: flex; align-items: center;
+            background: rgba(2, 6, 23, 0.7); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding-right: 15px;
+        }
+        #taskDate { border: none; background: transparent; }
+        .calendar-trigger { cursor: pointer; font-size: 1.2rem; filter: drop-shadow(0 0 5px var(--accent)); }
+
+        .btn-main {
+            background: linear-gradient(90deg, #1e40af, #0891b2);
+            color: white; padding: 18px; border: none; border-radius: 15px;
+            font-weight: 800; letter-spacing: 1px;
+        }
+
+        /* ===== LIST STYLES ===== */
+        ul { list-style: none; padding: 0; margin-top: 30px; max-height: 400px; overflow-y: auto; }
+        li {
+            background: rgba(255,255,255,0.03); padding: 20px; border-radius: 18px;
+            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .missed-task { border-left: 5px solid #ef4444; background: rgba(239, 68, 68, 0.05); }
+
+        .buttons { display: flex; gap: 5px; }
+        .buttons button { width: 40px; height: 40px; border-radius: 10px; border: none; color: white; }
+        .done { background: #10b981; } 
+        .delete { background: #ef4444; } 
+        .edit-btn { background: #f59e0b; }
+
+        /* ===== LOGO SYMBOL ===== */
+        .logo-area { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .logo-symbol {
+            width: 45px; height: 45px; background: var(--accent); border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+        }
+        .entry-label {
+            font-size: 1.8rem; font-weight: 900;
+            background: linear-gradient(to right, #fff, var(--accent), #fff);
+            background-size: 200% auto; -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; animation: shine-text 3s linear infinite;
+        }
+        @keyframes shine-text { to { background-position: 200% center; } }
+
+        #live-clock { position: fixed; top: 20px; right: 30px; color: var(--accent); font-weight: bold; }
+
+        @media (max-width: 850px) { .wrapper { flex-direction: column; } .dashboard { width: 100%; } }
+    </style>
+</head>
+<body>
+
+<div class="sparkle-bg" id="sparkle-container"></div>
+<div id="live-clock">🕒 <span id="clock-text">00:00:00</span></div>
+
+<div class="wrapper">
+    <div class="dashboard">
+        <h3 style="text-align:center; font-size:0.7rem; letter-spacing:3px; color:var(--accent);">ANALYTICS</h3>
+        <div style="display:flex; justify-content:center; margin: 20px 0;">
+             <div style="position:relative; width:100px; height:100px;">
+                <svg width="100" height="100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+                    <circle id="progress-bar" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="8" 
+                    stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin:center; transition: 1s;"/>
+                </svg>
+                <div id="perc-val" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-weight:bold; font-size:1.2rem;">0%</div>
+            </div>
+        </div>
+        <div class="card active-filter" id="card-all" onclick="setFilter('all')"><span>TOTAL TASKS</span><b id="total">0</b></div>
+        <div class="card" id="card-done" onclick="setFilter('done')"><span>COMPLETED</span><b id="completed">0</b></div>
+        <div class="card" id="card-missed" onclick="setFilter('missed')"><span>OVERDUE</span><b id="missed">0</b></div>
+    </div>
+
+    <div class="todo-app">
+        <div class="logo-area">
+            <div class="logo-symbol">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="4"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <div class="entry-label">Smart To-Do Pro</div>
+        </div>
+
+        <div class="input-box">
+            <input type="text" id="taskInput" placeholder="Describe your mission..." onkeydown="checkEnter(event)">
+            <div class="date-scroller">
+                <input type="datetime-local" id="taskDate" onkeydown="checkEnter(event)">
+                <span class="calendar-trigger" onclick="document.getElementById('taskDate').showPicker()">📅</span>
+            </div>
+            <button class="btn-main" onclick="addTask()">INITIALIZE SCHEDULE</button>
+        </div>
+
+        <ul id="taskList"></ul>
+    </div>
+</div>
+
+<script>
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+let currentFilter = 'all';
+
+// Sparkle Generation
+const container = document.getElementById('sparkle-container');
+for(let i=0; i<80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.width = star.style.height = Math.random() * 2 + 1 + 'px';
+    star.style.setProperty('--d', (Math.random() * 3 + 2) + 's');
+    star.style.animationDelay = Math.random() * 5 + 's';
+    container.appendChild(star);
+}
+
+function updateClock() { document.getElementById('clock-text').innerText = new Date().toLocaleTimeString(); }
+setInterval(updateClock, 1000); updateClock();
+
+// ENTER KEY TRIGGER
+function checkEnter(event) {
+    if (event.key === "Enter") {
+        addTask();
+    }
+}
+
+function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('active-filter'));
+    document.getElementById(`card-${f}`).classList.add('active-filter');
+    renderTasks();
+}
+
+function addTask() {
+    const input = document.getElementById("taskInput");
+    const date = document.getElementById("taskDate");
+    if(!input.value.trim()) return;
+    
+    tasks.push({
+        text: input.value,
+        date: date.value,
+        completed: false,
+        id: Date.now()
+    });
+    
+    input.value = ""; date.value = "";
+    save();
+}
+
+function save() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    renderTasks();
+}
+
+// EDIT OPTION (Now global)
+function reEditTask(index) {
+    const task = tasks[index];
+    const newTitle = prompt("Update Task Name:", task.text);
+    if (newTitle === null || newTitle.trim() === "") return;
+    
+    const newDate = prompt("Reschedule (Format: YYYY-MM-DDTHH:MM):", task.date);
+    if (newDate === null) return;
+
+    tasks[index].text = newTitle;
+    tasks[index].date = newDate;
+    save();
+}
+
+function toggleTask(index) {
+    tasks[index].completed = !tasks[index].completed;
+    save();
+}
+
+function deleteTask(index) {
+    if(confirm("Discard this mission?")) {
+        tasks.splice(index, 1);
+        save();
+    }
+}
+
+function renderTasks() {
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+    const now = new Date();
+    let compCount = 0, missCount = 0;
+
+    tasks.forEach(t => {
+        if(t.completed) compCount++;
+        else if(t.date && new Date(t.date) < now) missCount++;
+    });
+
+    let filtered = tasks.map((t, idx) => ({...t, originalIdx: idx}));
+    if(currentFilter === 'done') filtered = filtered.filter(t => t.completed);
+    if(currentFilter === 'missed') filtered = filtered.filter(t => !t.completed && t.date && new Date(t.date) < now);
+
+    filtered.forEach(t => {
+        const isLate = !t.completed && t.date && new Date(t.date) < now;
+        const li = document.createElement("li");
+        if(isLate) li.classList.add("missed-task");
+        
+        li.innerHTML = `
+            <div>
+                <div style="font-weight:bold; color:${t.completed ? '#64748b' : 'white'}; text-decoration:${t.completed ? 'line-through' : 'none'}">${t.text}</div>
+                <div style="font-size:0.8rem; margin-top:5px; color:${isLate ? '#ef4444' : 'var(--accent)'}">
+                    ${isLate ? '⚠️ OVERDUE: ' : '⏳ '} ${t.date ? t.date.replace('T', ' @ ') : 'No Deadline'}
+                </div>
+            </div>
+            <div class="buttons">
+                <button class="edit-btn" title="Edit Task" onclick="reEditTask(${t.originalIdx})">✏️</button>
+                <button class="done" title="Complete" onclick="toggleTask(${t.originalIdx})">✔</button>
+                <button class="delete" title="Delete" onclick="deleteTask(${t.originalIdx})">🗑</button>
+            </div>
+        `;
+        list.appendChild(li);
+    });
+
+    document.getElementById("total").innerText = tasks.length;
+    document.getElementById("completed").innerText = compCount;
+    document.getElementById("missed").innerText = missCount;
+    
+    const bar = document.getElementById("progress-bar");
+    const perc = tasks.length ? Math.round((compCount/tasks.length)*100) : 0;
+    bar.style.strokeDashoffset = 283 - (283 * perc / 100);
+    document.getElementById("perc-val").innerText = perc + "%";
+}
+
+renderTasks();
+</script>
+</body>
+</html>
